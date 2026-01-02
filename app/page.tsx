@@ -233,10 +233,7 @@ export default function Home() {
     }, []);
 
     return (
-        <div className="h-screen relative overflow-hidden flex flex-col"
-            style={{
-                background: 'linear-gradient(135deg, #f5e6d3 0%, #d4b896 100%)',
-            }}>
+        <div className="h-screen relative overflow-hidden flex flex-col">
 
             {/* Header */}
             <header className="text-center py-4 relative z-10 flex-none bg-white/30 backdrop-blur-sm shadow-sm">
