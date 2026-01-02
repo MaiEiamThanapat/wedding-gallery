@@ -2,7 +2,7 @@
 function doGet(e) {
     const cache = CacheService.getScriptCache();
     const cacheKey = 'wedding_gallery_data';
-    const cacheTime = 30; // 30 วินาที
+    const cacheTime = 60; // 60 วินาที (1 นาที) - สมดุลระหว่าง quota usage และความสดใหม่ของข้อมูล
     
     // ลองดึงจาก cache ก่อน
     const cached = cache.get(cacheKey);

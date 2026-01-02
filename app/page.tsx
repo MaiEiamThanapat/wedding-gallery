@@ -36,7 +36,8 @@ export default function Home() {
     const API_URL = '/api/messages';
     // กำหนดเวลาในการดึงข้อมูลใหม่ (หน่วย: มิลลิวินาที)
     // 10000 = 10 วินาที, 30000 = 30 วินาที
-    const REFRESH_INTERVAL = 10000;
+    // ลดเป็น 15 วินาที เพื่อให้เห็นข้อมูลใหม่เร็วขึ้น แต่ยังใช้ cache เพื่อลด quota
+    const REFRESH_INTERVAL = 15000; // 15 วินาที
 
     // กำหนดเวลาในการหมุนเปลี่ยนชุดข้อมูล (หน่วย: มิลลิวินาที)
     const ROTATION_INTERVAL = 20000;
@@ -45,6 +46,28 @@ export default function Home() {
 
     const fetchData = async () => {
         console.log('🔄 fetchData called, fetching from:', API_URL);
+        
+        // ตรวจสอบ localStorage cache ก่อน
+        const CACHE_KEY = 'wedding_messages_cache';
+        const CACHE_DURATION = 30000; // 30 วินาที - frontend cache สั้นกว่าเพื่อให้เห็นข้อมูลใหม่เร็วขึ้น
+        
+        try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+                const { data, timestamp } = JSON.parse(cached);
+                const now = Date.now();
+                if (now - timestamp < CACHE_DURATION) {
+                    console.log('✅ Using cached data from localStorage');
+                    console.log('📊 Cache age:', Math.round((now - timestamp) / 1000), 'seconds');
+                    setMessages(data);
+                    setLoading(false);
+                    return;
+                }
+            }
+        } catch (error) {
+            console.log('⚠️ Error reading cache:', error);
+        }
+        
         setLoading(true);
         
         try {
@@ -121,6 +144,18 @@ export default function Home() {
             
             console.log("✅ Mapped messages:", mappedMessages);
             console.log("📈 Total messages:", mappedMessages.length);
+            
+            // เก็บใน localStorage cache
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    data: mappedMessages,
+                    timestamp: Date.now()
+                }));
+                console.log('✅ Data cached in localStorage for', CACHE_DURATION / 1000, 'seconds');
+            } catch (error) {
+                console.log('⚠️ Error saving cache:', error);
+            }
+            
             setMessages(mappedMessages);
             setLoading(false);
         } catch (error) {

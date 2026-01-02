@@ -5,7 +5,7 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxU5hm1iewq4A
 // In-memory cache
 let cachedData: any = null;
 let cacheTimestamp: number = 0;
-const CACHE_DURATION = 30000; // 30 วินาที (30,000 มิลลิวินาที)
+const CACHE_DURATION = 60000; // 60 วินาที (1 นาที) - สมดุลระหว่าง quota usage และความสดใหม่ของข้อมูล
 
 export async function GET() {
   try {
@@ -19,7 +19,7 @@ export async function GET() {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET',
           'Access-Control-Allow-Headers': 'Content-Type',
-          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
           'X-Cache-Status': 'HIT',
         },
       });
@@ -122,7 +122,7 @@ export async function GET() {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET',
         'Access-Control-Allow-Headers': 'Content-Type',
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
         'X-Cache-Status': 'MISS',
       },
     });
