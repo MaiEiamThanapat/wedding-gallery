@@ -2,9 +2,31 @@ import { NextResponse } from 'next/server';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxU5hm1iewq4ArGBHpJ38pl0JUj61YJkqISAaUATFnctu8kOzFrAGmyVjiOMobtl14vfw/exec';
 
+// In-memory cache
+let cachedData: any = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 30000; // 30 วินาที (30,000 มิลลิวินาที)
+
 export async function GET() {
   try {
+    // ตรวจสอบ cache ก่อน
+    const now = Date.now();
+    if (cachedData && (now - cacheTimestamp) < CACHE_DURATION) {
+      console.log('✅ Returning cached data from Next.js API route (fast response)');
+      console.log('📊 Cache age:', Math.round((now - cacheTimestamp) / 1000), 'seconds');
+      return NextResponse.json(cachedData, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+          'X-Cache-Status': 'HIT',
+        },
+      });
+    }
+    
     console.log('📡 Server-side fetch to Google Apps Script:', GOOGLE_SCRIPT_URL);
+    console.log('📊 Cache status: MISS - fetching fresh data');
     
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'GET',
@@ -90,12 +112,18 @@ export async function GET() {
       data = { data };
     }
     
+    // อัปเดต cache
+    cachedData = data;
+    cacheTimestamp = Date.now();
+    console.log('✅ Data cached in Next.js API route for', CACHE_DURATION / 1000, 'seconds');
+    
     return NextResponse.json(data, {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET',
         'Access-Control-Allow-Headers': 'Content-Type',
-        'Cache-Control': 'no-store, max-age=0',
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        'X-Cache-Status': 'MISS',
       },
     });
   } catch (error) {
