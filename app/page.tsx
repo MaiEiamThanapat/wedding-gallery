@@ -1,7 +1,19 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-// Define Interface for Message
+// Define Interface for Message from Google Sheet
+interface MessageRaw {
+    'ประทับเวลา'?: string;
+    'ชื่อผู้เข้าร่วมงาน'?: string;
+    'ข้อความอวยพร (Paragraph)'?: string;
+    'อัพโหลดรูปภาพ (File upload)'?: string;
+    // Fallback for old field names
+    'ชื่อ-นามสกุล'?: string;
+    'ข้อความอวยพร'?: string;
+    'Timestamp'?: string;
+    'รูปภาพ'?: string;
+}
+
 interface Message {
     'ชื่อ-นามสกุล': string;
     'ข้อความอวยพร': string;
@@ -10,7 +22,7 @@ interface Message {
 }
 
 interface ApiResponse {
-    data: Message[];
+    data: MessageRaw[];
 }
 
 export default function Home() {
@@ -20,111 +32,118 @@ export default function Home() {
     const [imageDimensions, setImageDimensions] = useState<{ [key: number]: { width: number; height: number; orientation: 'portrait' | 'landscape' | 'square' } }>({});
     const [displayIndex, setDisplayIndex] = useState<number>(0);
 
-    const GOOGLE_SCRIPT_URL = 'YOUR_WEB_APP_URL_HERE';
+    // ใช้ Next.js API route แทนการเรียก Google Apps Script โดยตรงเพื่อหลีกเลี่ยง CORS
+    const API_URL = '/api/messages';
     // กำหนดเวลาในการดึงข้อมูลใหม่ (หน่วย: มิลลิวินาที)
     // 10000 = 10 วินาที, 30000 = 30 วินาที
-    const REFRESH_INTERVAL = 2000;
+    const REFRESH_INTERVAL = 10000;
 
     // กำหนดเวลาในการหมุนเปลี่ยนชุดข้อมูล (หน่วย: มิลลิวินาที)
-    const ROTATION_INTERVAL = 2000;
+    const ROTATION_INTERVAL = 20000;
     const ITEMS_PER_PAGE = 10;
 
 
     const fetchData = async () => {
-        if (GOOGLE_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
-            console.log('Using Mock Data');
-            setMessages([
-                {
-                    'ชื่อ-นามสกุล': '1',
-                    'ข้อความอวยพร': 'ขอให้มีความสุขมากๆ นะครับ',
-                    'Timestamp': new Date().toISOString(),
-                    'รูปภาพ': '/IMG_2385.jpg'
-                },
-                {
-                    'ชื่อ-นามสกุล': '2',
-                    'ข้อความอวยพร': 'Congratulations! ดีใจด้วยนะคะ',
-                    'Timestamp': new Date().toISOString(),
-                    'รูปภาพ': '/IMG_2385.jpg'
-                },
-                {
-                    'ชื่อ-นามสกุล': '3',
-                    'ข้อความอวยพร': 'ยินดีด้วยนะเพื่อน รักกันนานๆ นะ',
-                    'Timestamp': new Date().toISOString(),
-                    'รูปภาพ': '/IMG_2385.jpg'
-                },
-                {
-                    'ชื่อ-นามสกุล': '4',
-                    'ข้อความอวยพร': 'ขอให้รักกันตลอดไป',
-                    'Timestamp': new Date().toISOString(),
-                    'รูปภาพ': '/IMG_2334.jpg'
-                },
-                {
-                    'ชื่อ-นามสกุล': 'สุดหล่อ',
-                    'ข้อความอวยพร': 'ขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไปขอให้รักกันตลอดไป',
-                    'Timestamp': new Date().toISOString(),
-                    'รูปภาพ': ''
-                },
-                {
-                    'ชื่อ-นามสกุล': '6',
-                    'ข้อความอวยพร': 'ขอให้รักกันตลอดไป',
-                    'Timestamp': new Date().toISOString(),
-                    'รูปภาพ': '/IMG_2334.jpg'
-                },
-                {
-                    'ชื่อ-นามสกุล': '7',
-                    'ข้อความอวยพร': 'พี่สาวแต่งงาน ดีใจมากๆ เลย',
-                    'Timestamp': new Date().toISOString(),
-                    'รูปภาพ': '/IMG_2385.jpg'
-                },
-                {
-                    'ชื่อ-นามสกุล': '8',
-                    'ข้อความอวยพร': 'Beautiful couple! 💕',
-                    'Timestamp': new Date().toISOString(),
-                    'รูปภาพ': '/IMG_2385.jpg'
-                },
-                {
-                    'ชื่อ-นามสกุล': '9',
-                    'ข้อความอวยพร': 'Beautiful couple! 💕',
-                    'Timestamp': new Date().toISOString(),
-                    'รูปภาพ': '/iso.png'
-                },
-                {
-                    'ชื่อ-นามสกุล': '10',
-                    'ข้อความอวยพร': 'Beautiful couple! 💕',
-                    'Timestamp': new Date().toISOString(),
-                    'รูปภาพ': '/engine.png'
-                }, {
-                    'ชื่อ-นามสกุล': '11',
-                    'ข้อความอวยพร': 'Beautiful couple! 💕',
-                    'Timestamp': new Date().toISOString(),
-                    'รูปภาพ': '/IMG_2339.jpg'
-                }, {
-                    'ชื่อ-นามสกุล': '12',
-                    'ข้อความอวยพร': 'Beautiful couple! 💕',
-                    'Timestamp': new Date().toISOString(),
-                    'รูปภาพ': '/IMG_2339.jpg'
-                }
-            ]);
-            setLoading(false);
-            return;
-        }
-
+        console.log('🔄 fetchData called, fetching from:', API_URL);
+        setLoading(true);
+        
         try {
-            const response = await fetch(GOOGLE_SCRIPT_URL);
-            if (!response.ok) throw new Error('Network error');
+            console.log('📡 Starting fetch...');
+            const response = await fetch(API_URL);
+            
+            console.log('📥 Response received:', {
+                ok: response.ok,
+                status: response.status,
+                statusText: response.statusText
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error || response.statusText}`);
+            }
+            
             const result: ApiResponse = await response.json();
-            setMessages(result.data);
+            console.log("✅ Raw API result:", result);
+            console.log("📊 Data array:", result.data);
+            
+            if (!result.data || !Array.isArray(result.data)) {
+                console.error('❌ Invalid data format:', result);
+                throw new Error('Invalid data format from API');
+            }
+            
+            // Function to convert Google Drive URL to thumbnail API link
+            // ใช้ Google Drive Thumbnail API เพื่อหลีกเลี่ยงปัญหา sharing permissions
+            const convertGoogleDriveUrl = (url: string | null | undefined): string | null => {
+                if (!url || url === '') return null;
+                
+                console.log('🖼️ Original image URL:', url);
+                
+                // If already a direct link or external URL, return as is
+                if (url.startsWith('http://') || url.startsWith('https://')) {
+                    // Check if it's a Google Drive view link
+                    // Format: https://drive.google.com/file/d/FILE_ID/view
+                    // or: https://drive.google.com/open?id=FILE_ID
+                    const driveFileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || 
+                                           url.match(/[?&]id=([a-zA-Z0-9_-]+)/) ||
+                                           url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                    
+                    if (driveFileIdMatch && driveFileIdMatch[1]) {
+                        const fileId = driveFileIdMatch[1];
+                        
+                        // ใช้ Google Drive Thumbnail API - ไม่ต้องตั้ง sharing permissions
+                        // Format 1: lh3.googleusercontent.com (simpler, auto-size, recommended)
+                        const thumbnailUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+                        console.log('🔄 Converted to thumbnail API (lh3):', thumbnailUrl);
+                        console.log('ℹ️ Using Google Drive Thumbnail API - no sharing permissions needed');
+                        return thumbnailUrl;
+                    }
+                    
+                    // If it's already a direct link or external URL, return as is
+                    return url;
+                }
+                
+                // If it's a relative path, return as is
+                return url;
+            };
+            
+            // Map data from Google Sheet format to our Message format
+            const mappedMessages: Message[] = result.data.map((raw: MessageRaw) => {
+                const imageUrl = raw['อัพโหลดรูปภาพ (File upload)'] || raw['รูปภาพ'] || null;
+                const convertedImageUrl = convertGoogleDriveUrl(imageUrl);
+                
+                return {
+                    'ชื่อ-นามสกุล': raw['ชื่อผู้เข้าร่วมงาน'] || raw['ชื่อ-นามสกุล'] || 'ไม่ระบุชื่อ',
+                    'ข้อความอวยพร': raw['ข้อความอวยพร (Paragraph)'] || raw['ข้อความอวยพร'] || '',
+                    'Timestamp': raw['ประทับเวลา'] || raw['Timestamp'] || new Date().toISOString(),
+                    'รูปภาพ': convertedImageUrl
+                };
+            });
+            
+            console.log("✅ Mapped messages:", mappedMessages);
+            console.log("📈 Total messages:", mappedMessages.length);
+            setMessages(mappedMessages);
             setLoading(false);
         } catch (error) {
-            console.error('Error:', error);
+            console.error('❌ fetchData error:', error);
+            if (error instanceof Error) {
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+            }
             setLoading(false);
         }
     };
 
     useEffect(() => {
+        console.log('🚀 Component mounted, initializing fetchData');
         fetchData();
-        const interval = setInterval(fetchData, REFRESH_INTERVAL);
-        return () => clearInterval(interval);
+        const interval = setInterval(() => {
+            console.log('⏰ Interval triggered, calling fetchData');
+            fetchData();
+        }, REFRESH_INTERVAL);
+        return () => {
+            console.log('🧹 Cleaning up interval');
+            clearInterval(interval);
+        };
     }, []);
 
     // Track viewport height
@@ -307,6 +326,15 @@ export default function Home() {
                                                             src={msg['รูปภาพ']}
                                                             alt={msg['ชื่อ-นามสกุล']}
                                                             className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                console.error('❌ Image load error:', msg['รูปภาพ']);
+                                                                console.error('❌ Image element:', e.currentTarget);
+                                                                // Hide broken image
+                                                                e.currentTarget.style.display = 'none';
+                                                            }}
+                                                            onLoad={() => {
+                                                                console.log('✅ Image loaded successfully:', msg['รูปภาพ']);
+                                                            }}
                                                         />
                                                     </div>
                                                 </div>
