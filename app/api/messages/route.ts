@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxU5hm1iewq4ArGBHpJ38pl0JUj61YJkqISAaUATFnctu8kOzFrAGmyVjiOMobtl14vfw/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBlMfq130W_WlhmE0x09IRThNFRGAPh90h-lV3KhpAdxdX5vtSKIrZeBx1nH0P3UxD/exec';
 
 // In-memory cache
 let cachedData: any = null;

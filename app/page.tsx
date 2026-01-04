@@ -4,14 +4,10 @@ import { useState, useEffect } from 'react';
 // Define Interface for Message from Google Sheet
 interface MessageRaw {
     'ประทับเวลา'?: string;
-    'ชื่อผู้เข้าร่วมงาน'?: string;
+    'ผู้อวยพร'?: string;
     'ข้อความอวยพร (Paragraph)'?: string;
-    'อัพโหลดรูปภาพ (File upload)'?: string;
-    // Fallback for old field names
-    'ชื่อ-นามสกุล'?: string;
-    'ข้อความอวยพร'?: string;
-    'Timestamp'?: string;
-    'รูปภาพ'?: string;
+    'อัพโหลดรูปภาพภายในงาน/รูปกับบ่าวสาวน่ารักๆ/รูปที่อยากให้บ่าวสาวเห็น (File upload)'?: string;
+
 }
 
 interface Message {
@@ -131,11 +127,14 @@ export default function Home() {
             
             // Map data from Google Sheet format to our Message format
             const mappedMessages: Message[] = result.data.map((raw: MessageRaw) => {
-                const imageUrl = raw['อัพโหลดรูปภาพ (File upload)'] || raw['รูปภาพ'] || null;
+                const imageUrl = raw['อัพโหลดรูปภาพภายในงาน/รูปกับบ่าวสาวน่ารักๆ/รูปที่อยากให้บ่าวสาวเห็น (File upload)'] 
+                    || raw['อัพโหลดรูปภาพ (File upload)'] 
+                    || raw['รูปภาพ'] 
+                    || null;
                 const convertedImageUrl = convertGoogleDriveUrl(imageUrl);
                 
                 return {
-                    'ชื่อ-นามสกุล': raw['ชื่อผู้เข้าร่วมงาน'] || raw['ชื่อ-นามสกุล'] || 'ไม่ระบุชื่อ',
+                    'ชื่อ-นามสกุล': raw['ผู้อวยพร'] || raw['ชื่อผู้เข้าร่วมงาน'] || raw['ชื่อ-นามสกุล'] || 'ไม่ระบุชื่อ',
                     'ข้อความอวยพร': raw['ข้อความอวยพร (Paragraph)'] || raw['ข้อความอวยพร'] || '',
                     'Timestamp': raw['ประทับเวลา'] || raw['Timestamp'] || new Date().toISOString(),
                     'รูปภาพ': convertedImageUrl
