@@ -5,13 +5,31 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBlMfq130W_W
 // In-memory cache
 let cachedData: any = null;
 let cacheTimestamp: number = 0;
+let cachedUrl: string = ''; // เก็บ URL ที่ใช้ cache ไว้
 const CACHE_DURATION = 60000; // 60 วินาที (1 นาที) - สมดุลระหว่าง quota usage และความสดใหม่ของข้อมูล
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // ตรวจสอบ cache ก่อน
+    // ตรวจสอบ query parameter สำหรับ force refresh
+    const { searchParams } = new URL(request.url);
+    const forceRefresh = searchParams.get('refresh') === 'true';
+    
+    // ตรวจสอบว่า URL เปลี่ยนหรือไม่
+    const urlChanged = cachedUrl !== GOOGLE_SCRIPT_URL;
+    
+    // ถ้า URL เปลี่ยน ให้ clear cache
+    if (urlChanged && cachedData) {
+      console.log('🔄 URL changed, clearing cache');
+      console.log('📊 Old URL:', cachedUrl);
+      console.log('📊 New URL:', GOOGLE_SCRIPT_URL);
+      cachedData = null;
+      cacheTimestamp = 0;
+      cachedUrl = '';
+    }
+    
+    // ตรวจสอบ cache ก่อน (ถ้าไม่ force refresh และ URL ยังเหมือนเดิม)
     const now = Date.now();
-    if (cachedData && (now - cacheTimestamp) < CACHE_DURATION) {
+    if (!forceRefresh && !urlChanged && cachedData && (now - cacheTimestamp) < CACHE_DURATION) {
       console.log('✅ Returning cached data from Next.js API route (fast response)');
       console.log('📊 Cache age:', Math.round((now - cacheTimestamp) / 1000), 'seconds');
       return NextResponse.json(cachedData, {
@@ -23,6 +41,12 @@ export async function GET() {
           'X-Cache-Status': 'HIT',
         },
       });
+    }
+    
+    if (forceRefresh) {
+      console.log('🔄 Force refresh requested - clearing cache');
+      cachedData = null;
+      cacheTimestamp = 0;
     }
     
     console.log('📡 Server-side fetch to Google Apps Script:', GOOGLE_SCRIPT_URL);
@@ -112,10 +136,12 @@ export async function GET() {
       data = { data };
     }
     
-    // อัปเดต cache
+    // อัปเดต cache พร้อมเก็บ URL ไว้ด้วย
     cachedData = data;
     cacheTimestamp = Date.now();
+    cachedUrl = GOOGLE_SCRIPT_URL; // เก็บ URL ที่ใช้ cache ไว้
     console.log('✅ Data cached in Next.js API route for', CACHE_DURATION / 1000, 'seconds');
+    console.log('📊 Cached URL:', cachedUrl);
     
     return NextResponse.json(data, {
       headers: {
